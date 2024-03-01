@@ -1,6 +1,7 @@
 import numpy as np  # linear algebra
 import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from mlxtend.plotting import plot_confusion_matrix
@@ -20,6 +21,7 @@ def read_single_image(image_path):
         for i in range(10304):
             ans.append(ord(f.read(1)))
     return ans  # np.array(ans, dtype='float')
+
 
 def construct_data_frame():
     images = []
@@ -50,7 +52,7 @@ def split_data(D, labels):
         else:
             test_Data.append(D[i])
             test_Label.append(labels[i])
-    return train_Data, train_Label, test_Data, test_Label
+    return np.array(train_Data), np.array(train_Label), np.array(test_Data), np.array(test_Label)
 
 
 def LDA(Data, label):
@@ -70,14 +72,12 @@ def LDA(Data, label):
     # Calculate mean for each feature
     mean = np.mean(Data, axis=0)
 
-
     # Calculate Sb
     Sb = np.zeros((number_of_features, number_of_features))
     for i in range(number_of_classes):
         x = np.array(means[i] - mean).reshape(number_of_features, 1)
         y = x.dot(x.T) * 5
         Sb = np.add(Sb, y)
-
 
     # Calculate S
     S = np.zeros((number_of_features, number_of_features))
@@ -86,15 +86,32 @@ def LDA(Data, label):
         Zi = np.array(dataI - means[i])
         S += Zi.T.dot(Zi)
 
-    #Calculate Eigen Values and Eigen Vectors
+    # Calculate Eigen Values and Eigen Vectors
     X = np.linalg.inv(S).dot(Sb)
     eigen_Values, eigen_Vectors = np.linalg.eigh(X)
-    print(eigen_Values)
+
+    idx = eigen_Values.argsort()[::-1]
+    eigen_Values = eigen_Values[idx]
+    eigen_Vectors = eigen_Vectors[:, idx]
+
+    U = eigen_Vectors[:, 0:39]
+    return U
 
 
 (D, labels) = construct_data_frame()
 
-
 (train_Data, train_Label, test_Data, test_Label) = split_data(D, labels)
 
-LDA(train_Data, train_Label)
+U = LDA(train_Data, train_Label)
+
+Projected_train_Data = train_Data.dot(U)  # ==  ((U.T).dot(train_Data.T)).T
+Projected_test_Data = test_Data.dot(U)
+
+K = [1,3,5,7]
+for i in K:
+    knn = KNeighborsClassifier(n_neighbors=i)
+    knn.fit(Projected_train_Data,train_Label)
+    predicted_labels = knn.predict(Projected_test_Data)
+    acc = accuracy_score(test_Label,predicted_labels)
+
+    print("Accuracy = ",acc,"  at k = ",i)
