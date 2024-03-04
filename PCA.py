@@ -11,6 +11,7 @@ import cupy as cp
 labels_num = 40  # The number of persons
 features_num = 10304  # The number of features in every picture
 dataset_dir = "archive\\"  # The dataset directory path
+cars_dir = "Audi\\"
 
 
 def read_image(image_path):
@@ -39,6 +40,24 @@ def construct_dataset():
         for j in range(1, 11):
             lb.append(str(i))
             ds.append(read_image(f'{label_path}{j}.pgm'))
+
+    return np.array(ds), lb
+
+
+def construct_faces_no_faces():
+    """
+    :return: The total data matrix, the total labels vector
+    """
+    ds, lb = [], []  # ds: dataset, lb: labels
+    for i in range(1, labels_num + 1):
+        label_path = dataset_dir + f's{i}/'
+        for j in range(1, 11):
+            lb.append("face")
+            ds.append(read_image(f'{label_path}{j}.pgm'))
+    label_path = cars_dir
+    for i in range(1, 201):
+        lb.append("no face")
+        ds.append(read_image(f'{label_path}{i}.pgm'))
 
     return np.array(ds), lb
 
@@ -132,7 +151,7 @@ for a in alphas:
 
     K = [1, 3, 5, 7]
     for k in K:
-        knn = KNeighborsClassifier(n_neighbors=k)
+        knn = KNeighborsClassifier(n_neighbors=k, weights='distance')
         knn.fit(projected_train_data, train_labels)
         predicted_labels = knn.predict(projected_test_data)
         acc = accuracy_score(test_labels, predicted_labels)
