@@ -81,6 +81,25 @@ def split_data(ds, lb):
     return np.array(trd), np.array(trl), np.array(tsd), np.array(tsl)
 
 
+def bonus_split(ds, lb):
+    """
+        :param ds: dataset
+        :param lb: labels
+        :return: training data matrix, training labels vector, testing data matrix, testing labels vector
+        """
+    trd, trl, tsd, tsl = [], [], [], []  # Train data, Train labels, Test data, Test labels
+    for i in range(0, len(ds), 10):
+        for j in range(7):
+            # first 7 for train
+            trd.append(ds[i+j])
+            trl.append(lb[i+j])
+        for j in range(3):
+            # last 3 for test
+            tsd.append(ds[i+j+7])
+            tsl.append(lb[i+j+7])
+    return np.array(trd), np.array(trl), np.array(tsd), np.array(tsl)
+
+
 def get_eigen_variables(ds):
     """
     :param ds: Dataset (n x d) (200 x 10304)
@@ -138,7 +157,7 @@ def PCA(ds, alpha):
 
 dataset, labels = construct_dataset()
 
-train_data, train_labels, test_data, test_labels = split_data(dataset, labels)
+train_data, train_labels, test_data, test_labels = bonus_split(dataset, labels)
 alphas = [0.8, 0.85, 0.9, 0.95]
 e_val, e_vec = get_eigen_variables(train_data)
 # Comment out next line when testing multiple alphas, uncomment the next line when testing one alpha
