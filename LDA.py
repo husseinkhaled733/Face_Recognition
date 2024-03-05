@@ -62,6 +62,21 @@ def split_data(D, labels):
             test_Label.append(labels[i])
     return np.array(train_Data), np.array(train_Label), np.array(test_Data), np.array(test_Label)
 
+def split_data_70_30(D, labels):
+    train_Data = []
+    train_Label = []
+    test_Data = []
+    test_Label = []
+    for i in range(len(D)):
+        if i % 10 <= 6:
+            train_Data.append(D[i])
+            train_Label.append(labels[i])
+        else:
+            test_Data.append(D[i])
+            test_Label.append(labels[i])
+    return np.array(train_Data), np.array(train_Label), np.array(test_Data), np.array(test_Label)
+
+
 
 def LDA(Data, label, eigen_values_count=39):
     print(eigen_values_count)
@@ -143,9 +158,9 @@ def calc_Accuracy(Projected_train_Data, Projected_test_Data, train_Label, test_L
 
 (D, labels) = construct_data_frame()
 
-print(D)
-print(labels)
-(train_Data, train_Label, test_Data, test_Label) = split_data(D, labels)
+
+#(train_Data, train_Label, test_Data, test_Label) = split_data(D, labels)
+(train_Data, train_Label, test_Data, test_Label) = split_data_70_30(D, labels)
 
 start_time = time.time()
 
