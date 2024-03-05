@@ -1,4 +1,5 @@
 import numpy as np  # linear algebra
+import scipy
 import scipy as sp
 import pandas as pd  # data processing, CSV file I/O (e.g. pd.read_csv)
 from sklearn.neighbors import KNeighborsClassifier
@@ -26,19 +27,15 @@ def read_single_image(image_path):
 
         for i in range(10304):
             ans.append(ord(f.read(1)))
-    if image_path == "/home/hussein/PatternDatasets/Faces/s40/10.pgm":
-        print(image_path)
-        print(ans)
-        print(len(ans))
 
-    return ans  # np.array(ans, dtype='float')
+    return ans
 
 
 def construct_data_frame():
     images = []
     persons = []
 
-    path = "/home/hussein/PatternDatasets/Faces/"
+    path = "C:\\Users\\DELL\\Desktop\\Pattern_Lab1\\archive\\"
     print('Reading Started')
     for x in range(1, number_of_persons + 1):
         current_person_path = path + 's' + str(x) + '/'
@@ -57,7 +54,7 @@ def split_data(D, labels):
     test_Data = []
     test_Label = []
     for i in range(len(D)):
-        if i % 2 == 0:
+        if i % 2 == 1:
             train_Data.append(D[i])
             train_Label.append(labels[i])
         else:
@@ -80,7 +77,7 @@ def LDA(Data, label, eigen_values_count=39):
 
     for i in range(1, number_of_classes + 1):
         data = Data[np.where(label == str(i))]
-        print("data shape = ", data.shape)
+        # print("data shape = ", data.shape)
         meanI = np.mean(data, axis=0)
         means[i - 1] = meanI
 
@@ -103,20 +100,11 @@ def LDA(Data, label, eigen_values_count=39):
 
     # Calculate Eigen Values and Eigen Vectors
 
-    try:
-        inverse = np.linalg.inv(S)
-    except np.linalg.LinAlgError:
-        print("S is Singular")
-        inverse = np.linalg.pinv(S)
-
-    print("Is S Symmetric = ", isSymmetric(S))
-    print("Is Sb Symmetric = ", isSymmetric(Sb))
-    print("Is inverse Symmetric = ", isSymmetric(inverse))
-    print(inverse)
+    inverse = scipy.linalg.pinv(S)
 
     X = inverse.dot(Sb)
-    print("Is X Symmetric = ", isSymmetric(X))
-    eigen_Values, eigen_Vectors = np.linalg.eigh(X)
+
+    eigen_Values, eigen_Vectors = np.linalg.eig(X)
 
     idx = eigen_Values.argsort()[::-1]
     eigen_Values = eigen_Values[idx]
@@ -128,28 +116,46 @@ def LDA(Data, label, eigen_values_count=39):
     U = eigen_Vectors[:, 0:eigen_values_count]
     return U
 
-# (D, labels) = construct_data_frame()
-#
-# print(D)
-# print(labels)
-# (train_Data, train_Label, test_Data, test_Label) = split_data(D, labels)
-#
-# start_time = time.time()
-#
-# U = LDA(train_Data, train_Label, eigen_values_count=39)
-#
-# end_time = time.time()
-#
-# print("time taken = ",end_time-start_time)
-#
-# Projected_train_Data = train_Data.dot(U)  # ==  ((U.T).dot(train_Data.T)).T
-# Projected_test_Data = test_Data.dot(U)
-#
-# K = [1, 3, 5, 7]
-# for i in K:
-#     knn = KNeighborsClassifier(n_neighbors=i)
-#     knn.fit(Projected_train_Data, train_Label)
-#     predicted_labels = knn.predict(Projected_test_Data)
-#     acc = accuracy_score(test_Label, predicted_labels)
-#
-#     print("Accuracy = ", acc, "  at k = ", i)
+
+def calc_Accuracy(Projected_train_Data, Projected_test_Data, train_Label, test_Label):
+    K = [1, 3, 5, 7]
+    accuracies = []
+
+    for i in K:
+        knn = KNeighborsClassifier(n_neighbors=i)
+        knn.fit(Projected_train_Data, train_Label)
+        predicted_labels = knn.predict(Projected_test_Data)
+        acc = accuracy_score(test_Label, predicted_labels)
+        accuracies.append(acc)
+
+        print("Accuracy = ", acc, "  at k = ", i)
+
+    # Plotting accuracy against K
+    plt.plot(K, accuracies, marker='o')
+    plt.title('Accuracy vs. K')
+    plt.xlabel('K')
+    plt.ylabel('Accuracy')
+    plt.xticks(K)
+    plt.grid(True)
+    plt.show()
+
+
+
+(D, labels) = construct_data_frame()
+
+print(D)
+print(labels)
+(train_Data, train_Label, test_Data, test_Label) = split_data(D, labels)
+
+start_time = time.time()
+
+U = LDA(train_Data, train_Label, eigen_values_count=39)
+
+end_time = time.time()
+
+print("time taken = ", end_time - start_time)
+
+Projected_train_Data = train_Data.dot(U)  # ==  ((U.T).dot(train_Data.T)).T
+Projected_test_Data = test_Data.dot(U)
+
+calc_Accuracy(Projected_train_Data, Projected_test_Data,train_Label ,test_Label)
